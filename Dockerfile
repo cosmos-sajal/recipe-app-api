@@ -4,7 +4,6 @@ MAINTAINER Cosmos
 ENV PYTHONUNBUFFERED 1
 
 COPY ./requirements.txt /requirements.txt
-COPY ./.flake8 /app
 RUN pip install -r /requirements.txt
 
 RUN mkdir /app
