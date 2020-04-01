@@ -1,6 +1,9 @@
 from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
     PermissionsMixin
+from datetime import datetime
+import uuid
 
 
 class UserManager(BaseUserManager):
@@ -27,6 +30,22 @@ class UserManager(BaseUserManager):
         return user
 
 
+class BaseModel(models.Model):
+    class Meta:
+        abstract = True
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    is_deleted = models.BooleanField(default=False)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
+
+    def delete(self):
+        self.deleted_at = datetime.utcnow()
+        self.is_deleted = True
+        self.save()
+
+
 class User(AbstractBaseUser, PermissionsMixin):
     """Custom user model that supports using email instead of username"""
     email = models.EmailField(max_length=255, unique=True)
@@ -37,3 +56,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
+
+
+class Tag(BaseModel):
+    """Tag to be used for recipe"""
+    name = models.CharField(max_length=255)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return self.name
