@@ -1,6 +1,6 @@
-from rest_framework import generics, authentication, permissions
+from rest_framework import generics, authentication, permissions, viewsets
 from rest_framework.authtoken.views import ObtainAuthToken
-from user.serializers import UserSerializer, AuthTokenSerializer
+from user.serializers import UserSerializer, AuthTokenSerializer, OPTAuthTOkenSerializer, GenerateOTPSerializer
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -8,9 +8,19 @@ class CreateUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
 
 
-class CreateTokenView(ObtainAuthToken):
+class CreatePasswordTokenView(ObtainAuthToken):
     """Create a new auth token for user"""
     serializer_class = AuthTokenSerializer
+
+
+class CreateOTPTokenView(ObtainAuthToken):
+    """Create a new auth token for user using otp"""
+    serializer_class = OPTAuthTOkenSerializer
+
+
+class GenerateOTPView(generics.CreateAPIView):
+	"""Generates OTP for validation purpose"""
+	serializer_class = GenerateOTPSerializer
 
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
