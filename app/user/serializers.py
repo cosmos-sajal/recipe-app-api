@@ -6,6 +6,9 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from helper.helper_functions import get_random_number
 from rest_framework.response import Response
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError, AccessToken
+
 
 
 OTP_PREFIX = 'otp_login'
@@ -58,7 +61,7 @@ class GenerateOTPSerializer(serializers.Serializer):
 		otp = get_random_number()
 		cache.set(cache_key, otp, 120)
 
-		return {'status': 'done', 'mobile_number': mobile_number}
+		return {'mobile_number': mobile_number}
 
 
 class OPTAuthTOkenSerializer(serializers.Serializer):
@@ -68,6 +71,7 @@ class OPTAuthTOkenSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         """Validate and authenticate the user using otp"""
+        print(attrs)
         mobile_number = attrs.get('mobile_number')
         otp = attrs.get('otp')
         cache_key = OTP_PREFIX + mobile_number
@@ -81,9 +85,35 @@ class OPTAuthTOkenSerializer(serializers.Serializer):
             msg = _('Unable to authenticate with provided credential')
             raise serializers.ValidationError(msg, code='authentication')
 
-        attrs['user'] = user
+        refresh = TokenObtainPairSerializer.get_token(user)
+        data = {
+        	'refresh': str(refresh),
+        	'access': str(refresh.access_token)
+        }
+
+        return data
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField()
+
+    default_error_messages = {
+        'bad_token': _('Token is invalid or expired')
+    }
+
+    def validate(self, attrs):
+        self.access_token = attrs['access']
+        self.refresh_token = attrs['refresh']
 
         return attrs
+
+    def save(self, **kwargs):
+        try:
+            AccessToken(self.access_token).blacklist()
+            RefreshToken(self.refresh_token).blacklist()
+        except TokenError:
+            self.fail('bad_token')
 
 
 class AuthTokenSerializer(serializers.Serializer):

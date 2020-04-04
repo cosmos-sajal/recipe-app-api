@@ -3,17 +3,21 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from core.models import Tag, Ingredient, Recipe
 from recipe import serializers
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class BaseRecipeAttrViewSet(viewsets.GenericViewSet,
                             mixins.ListModelMixin,
                             mixins.CreateModelMixin):
     """Base class for tag and ingredient viewset"""
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         """Return objects for the current authenticated user only"""
+        print('hoooooo')
+        print(self.request.user)
+
         return self.queryset.filter(user=self.request.user).order_by("-name")
 
     def perform_create(self, serializer):
@@ -23,6 +27,7 @@ class BaseRecipeAttrViewSet(viewsets.GenericViewSet,
 
 class TagViewSet(BaseRecipeAttrViewSet):
     """Manage tags in the database"""
+    authentication_classes = (JWTAuthentication,)
     queryset = Tag.objects.all()
     serializer_class = serializers.TagSerializer
 
